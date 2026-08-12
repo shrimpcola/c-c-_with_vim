@@ -1,0 +1,96 @@
+Vim 9.0 插件完整安装方案（Fedora 系统）
+首选：vim-plug 插件管理器（最简单、主流）
+1. 一键安装 vim-plug
+终端执行这条（Vim 9 专用）：
+bash
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+2. 编辑配置文件 ~/.vimrc
+bash
+vim ~/.vimrc
+写入模板结构：
+vim
+" ========== 插件管理器启动 ==========
+call plug#begin('~/.vim/plugged')
+
+" 在这里写所有插件
+" 示例1：C/C++ 语法高亮、缩进增强
+Plug 'preservim/nerdtree'        " 文件树侧边栏
+Plug 'vim-airline/vim-airline'   " 底部状态栏美化
+Plug 'octol/vim-cpp-enhanced-highlight' " C++高亮
+Plug 'rhysd/vim-clang-format'    " C/C++ 自动格式化
+
+" ========== 结束插件区块 ==========
+call plug#end()
+
+" ========== 基础配置（可选）==========
+set number
+set tabstop=4
+set shiftwidth=4
+set expandtab
+syntax enable
+filetype plugin indent on
+3. 安装插件命令
+进入 vim，执行：
+vim
+:PlugInstall
+自动 git clone 所有插件到 ~/.vim/plugged/
+4. 常用 Plug 管理命令
+vim
+:PlugInstall     " 安装新增插件
+:PlugUpdate      " 更新所有插件
+:PlugClean       " 删除已在.vimrc注释掉的插件
+:PlugStatus      " 查看插件状态
+:PlugUpgrade     " 升级 vim-plug 本身
+重点：给 Vim9.0 装 C/C++ 智能补全（coc.nvim + clangd）
+1. 先装系统依赖（Fedora）
+bash
+sudo dnf install clangd clang nodejs npm
+2. 在 .vimrc 添加 coc.nvim
+vim
+call plug#begin('~/.vim/plugged')
+
+" C/C++ 智能补全核心
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+call plug#end()
+3. 执行安装
+vim
+:PlugInstall
+4. 安装 clangd LSP 服务
+打开 vim 执行 Coc 命令：
+vim
+:CocInstall coc-clangd
+5. 配置 coc-clangd
+vim
+:CocConfig
+粘贴 JSON：
+json
+{
+  "clangd.path": "clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--header-insertion=never",
+    "-j=4"
+  ]
+}
+6. 补全快捷键映射（加到 .vimrc 末尾）
+vim
+" Tab 触发补全
+inoremap <silent><expr> <TAB>
+\ coc#pum#visible() ? coc#pum#next(1) :
+\ CheckBackspace() ? "\<Tab>" :
+\ coc#refresh()
+inoremap <silent><expr> <S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
+
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+保存重启 Vim，打开 .c .cpp 输入 std:: 就有补全、跳转定义、语法报错。
+
+
+
+
+
